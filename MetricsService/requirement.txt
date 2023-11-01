@@ -1,0 +1,3 @@
+pip install matplotlib reportlab
+pip install PyGithub
+pip install Flask
