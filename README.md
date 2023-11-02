@@ -35,11 +35,17 @@ This project comprises 3 modules: MetricsService, DatabaseInstantiator, DataAggr
 
 The module provides a robust REST API service designed for retrieving productivity metrics and generating reports based on the stored data. Key functions include:
 
-- Retrieval of productivity metrics for a specified user via their Github username and repository name. This function optimizes performance through a caching mechanism. It queries the Github repository only if the stored metrics in the database are more than one hour old, updating the database with fresh metrics collected from Github.
+- Retrieval of productivity metrics snapshot for a specified user via their Github username and repository name. This function optimizes performance through a caching mechanism. It queries the Github repository only if the stored metrics in the database are more than one hour old, updating the database with fresh metrics collected from Github. See usage below (token is optional):
 
-- Generation of reports in various formats such as CSV, text, or PDF, containing the productivity metrics of a user. The report type is specified by the user and can be customized based on the username provided.
+```
+curl -X GET "http://127.0.0.1:5000/snapshot?usernames=user12&repository=repository_name" -H "Authorization: Bearer YOUR_GITHUB_TOKEN" -o metrics.json
+```
 
-- Creation of historical reports depicting trends over time for one or more developers, using a list of usernames. The data utilized in this report is compiled from the information collected by the DataAggregator service.
+- Creation of historical reports depicting trends over time based on a number of productiviy metrics for one or more developers, using a list of usernames and a repository. The data utilized in this report is compiled from the information collected by the DataAggregator service. See usage below (token is optional):
+
+```
+curl -X GET "http://127.0.0.1:5000/report?usernames=user1,user2&repository=repository_name" -o report.pdf
+```
 
 To launch the service, execute the following command from the command line: `python MetricsService/app.py`
 
@@ -72,7 +78,19 @@ docker build -t data_aggregator -f DataAggregator/Dockerfile .
 To run the container, use the command:
 
 ```
-docker run -d -e USERNAMES=dev1,dev2,dev3 -e TARGET_REPOSITORY=<repository name> data_aggregator
+docker run -d --env-file=env_vars.env data_aggregator
+```
+
+An example env_vars.env file is structured as follows:
+
+```
+MONGO_CONNECTION_STRING=<connection-string>
+METRICS_DATABASE_NAME=<database-name>
+USER_METRICS_COLLECTION=<user-metrics-collection>
+HISTORICAL_METRICS_COLLECTION=<historical-metrics-collection>
+PERSONAL_GITHUB_TOKEN=<YOUR_GITHUB_TOKEN_HERE>
+USERNAMES=dev1,dev2,dev2
+TARGET_REPOSITORY=<repository-name>
 ```
 
 This Docker containerization creates a persistent service dedicated to metric aggregation from GitHub, collecting and storing data in a MongoDB database facilitated by the DatabaseInstantiator setup.
@@ -88,3 +106,7 @@ To launch the DatabaseInstantiator, execute the following command from the comma
 ```
 python setup.py
 ```
+
+### Improvements
+
+1. Addition of unit and integration test modules

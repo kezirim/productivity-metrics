@@ -1,3 +1,5 @@
-pip install matplotlib reportlab
-pip install PyGithub
-pip install Flask
+pytz 
+pymongo
+matplotlib reportlab
+PyGithub
+Flask

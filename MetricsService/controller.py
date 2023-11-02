@@ -6,6 +6,15 @@ import pytz
 import pymongo
 from datetime import datetime, timedelta
 from github import Github
+import logging
+
+logger = logging.getLogger("MetricsLogger")
+logger.setLevel(logging.INFO)
+
+file_handler = logging.FileHandler("app.log")
+file_handler.setLevel(logging.INFO)
+logger.addHandler(file_handler)
+
 
 MONGO_CONNECTION_STRING = (
     os.environ.get("MONGO_CONNECTION_STRING") or "mongodb://localhost:28000/"
@@ -88,7 +97,7 @@ def get_lines_of_code(username, repo, start_date, end_date):
             elif file_content.type == "dir":
                 contents.extend(repo.get_contents(file_content.path))
     except Exception as e:
-        print("An error occurred:", e)
+        logger.error(e)
     return lines_of_code
 
 
@@ -217,10 +226,16 @@ def generate_metrics(
     start_date = pytz.timezone("UTC").localize(start_date)
     end_date = pytz.timezone("UTC").localize(end_date)
 
+    logger.info("instantiating a GitHub handle...")
     g = Github(token) if token else Github()
     try:
+        logger.info("getting GitHub user...")
         user = g.get_user(username)
+
+        logger.info("getting target repository...")
         repo = user.get_repo(repository_name)
+
+        logger.info("collecting metrics...")
         open_issues_count, closed_issues_count = get_issues_count(
             repo, start_date, end_date
         )
@@ -234,15 +249,16 @@ def generate_metrics(
         last_modified = pytz.timezone("UTC").localize(datetime.now())
 
         metrics = {
-            "developer": username,
-            "total_closed_issues": closed_issues_count,
-            "total_open_issues": open_issues_count,
-            "total_merged_prs": merged_prs_count,
-            "total_open_prs": open_prs_count,
-            "total_issue_cycle_time": issue_cycle_time,
-            "total_code_review_time": code_review_time,
-            "total_commits": commit_count,
-            "total_lines_of_code": lines_of_code,
+            "username": username,
+            "repository": repository_name,
+            "closed_issues": closed_issues_count,
+            "open_issues": open_issues_count,
+            "merged_prs": merged_prs_count,
+            "open_prs": open_prs_count,
+            "issue_cycle_time": issue_cycle_time,
+            "code_review_time": code_review_time,
+            "commits": commit_count,
+            "lines_of_code": lines_of_code,
             "start_date": start_date,
             "end_date": end_date,
             "last_modified": last_modified,
@@ -251,6 +267,7 @@ def generate_metrics(
         return metrics
 
     except Exception as e:
+        logger.error(e)
         return {"error": str(e)}
 
 
@@ -286,8 +303,26 @@ def retrieve_metrics(username, repository, token):
     return developer_metrics
 
 
-if __name__ == "__main__":
-    token = os.environ.get("PERSONAL_GITHUB_TOKEN")
-    repository = "neuralnetwork"
-    metrics = retrieve_metrics("easyrealm", repository, token)
-    print(metrics)
+def retrieve_historical_metrics(repository, usernames=None):
+    """
+    Function to retrieve hisorical metrics of a given set of GitHub usernames. Usernames parameter is optional.
+    The metrics are retrieved directly from a historical database, which contain weekly metrics snapshots
+
+    Parameters:
+    repository (str): The GitHub epository name
+    usernames (str): A comma-separated list of GitHub usernames
+
+    Returns:
+    dict: a collection of weekly snapshot of productivity metrics
+    """
+    client = get_mongo_client()
+    db = client[METRICS_DATABASE]
+    collection = db[HISTORICAL_METRICS_COLLECTION]
+
+    query = {"repository": repository}
+    if usernames:
+        usernames_list = usernames.split(",")
+        query["username"] = {"$in": usernames_list}
+
+    developer_metrics = collection.find(query)
+    return developer_metrics
