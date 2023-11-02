@@ -35,10 +35,10 @@ This project comprises 3 modules: MetricsService, DatabaseInstantiator, DataAggr
 
 The module provides a robust REST API service designed for retrieving productivity metrics and generating reports based on the stored data. Key functions include:
 
-- Retrieval of productivity metrics snapshot for a specified user via their Github username and repository name. This function optimizes performance through a caching mechanism. It queries the Github repository only if the stored metrics in the database are more than one hour old, updating the database with fresh metrics collected from Github. See usage below (token is optional):
+- Retrieval of productivity metrics snapshot for a specified user via their Github username and repository name. This function optimizes performance through a caching mechanism. It queries the Github repository only if the stored metrics in the database are more than one hour stale, updating the database with fresh metrics collected from Github. See usage below (token is optional):
 
 ```
-curl -X GET "http://127.0.0.1:5000/snapshot?usernames=user12&repository=repository_name" -H "Authorization: Bearer YOUR_GITHUB_TOKEN" -o metrics.json
+curl -X GET "http://127.0.0.1:5000/snapshot?usernames=user1&repository=repository_name" -H "Authorization: Bearer YOUR_GITHUB_TOKEN" -o metrics.json
 ```
 
 - Creation of historical reports depicting trends over time based on a number of productiviy metrics for one or more developers, using a list of usernames and a repository. The data utilized in this report is compiled from the information collected by the DataAggregator service. See usage below (token is optional):
@@ -109,4 +109,5 @@ python setup.py
 
 ### Improvements
 
-1. Addition of unit and integration test modules
+1. Addition of unit and integration test modules.
+2. Reduce latency to download report by using caching mechanism.

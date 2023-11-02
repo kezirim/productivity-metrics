@@ -289,7 +289,9 @@ def retrieve_metrics(username, repository, token):
     db = client[METRICS_DATABASE]
     collection = db[USER_METRICS_COLLECTION]
 
-    developer_metrics = collection.find_one({"username": username})
+    developer_metrics = collection.find_one(
+        {"username": username, "repository": repository}, {"_id": 0}
+    )
     if developer_metrics:
         last_modified = developer_metrics.get("last_modified")
         if last_modified and datetime.now() - last_modified < timedelta(hours=1):
@@ -298,7 +300,11 @@ def retrieve_metrics(username, repository, token):
     developer_metrics = generate_metrics(username, repository, token)
     if "error" not in developer_metrics:
         # overwrite stale data
-        collection.replace_one({"username": username}, developer_metrics, upsert=True)
+        collection.replace_one(
+            {"username": username, "repository": repository},
+            developer_metrics,
+            upsert=True,
+        )
 
     return developer_metrics
 
@@ -324,5 +330,11 @@ def retrieve_historical_metrics(repository, usernames=None):
         usernames_list = usernames.split(",")
         query["username"] = {"$in": usernames_list}
 
-    developer_metrics = collection.find(query)
+    developer_metrics = collection.find(query).sort(
+        [
+            ("username", pymongo.ASCENDING),
+            ("repository", pymongo.ASCENDING),
+            ("last_modified", pymongo.ASCENDING),
+        ]
+    )
     return developer_metrics

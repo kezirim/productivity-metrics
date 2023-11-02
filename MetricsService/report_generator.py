@@ -2,8 +2,9 @@ import os
 import tempfile
 from fpdf import FPDF
 import matplotlib.pyplot as plt
-import datetime
 import logging
+
+import controller as Controller
 
 logger = logging.getLogger("MetricsLogger")
 logger.setLevel(logging.INFO)
@@ -13,13 +14,13 @@ file_handler.setLevel(logging.INFO)
 logger.addHandler(file_handler)
 
 METRIC_MAPPING = {
-    "Closed Issues": "closed_issues_count",
-    "Open Issues": "open_issues_count",
-    "Merged Pull Requests": "merged_prs_count",
-    "Open Pull Requests": "open_prs_count",
+    "Closed Issues": "closed_issues",
+    "Open Issues": "open_issues",
+    "Merged Pull Requests": "merged_prs",
+    "Open Pull Requests": "open_prs",
     "Issue Cycle Time": "issue_cycle_time",
     "Code Review Time": "code_review_time",
-    "Commits": "commit_count",
+    "Commits": "commits",
     "Lines of Code": "lines_of_code",
 }
 

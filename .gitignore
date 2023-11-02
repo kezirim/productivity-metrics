@@ -160,3 +160,6 @@ cython_debug/
 #.idea/
 api/config.ini
 MetricsService/config.ini
+
+# vscode settings
+.vscode
